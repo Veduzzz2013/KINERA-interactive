@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KINERA Technologies</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@300;400;500;600;700&amp;family=Inconsolata:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+        html, body { height: 100%; margin: 0; }
+        * { font-family: 'Bricolage Grotesque', sans-serif; }
+        .mono { font-family: 'Inconsolata', monospace; }
+        .bg-main { background: #F8ECE4; }
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+        @keyframes energy-particle {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-60px) scale(0.3); opacity: 0; }
+        }
+        .energy-particle {
+            animation: energy-particle 1s ease-out forwards;
+        }
+        .glow-line {
+            background: linear-gradient(to top, transparent, #06d6a0, transparent);
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+        #three-canvas { width: 100%; height: 100%; cursor: pointer; }
+        .meter-fill {
+            transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .stat-value {
+            transition: all 0.2s ease;
+        }
+    </style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full bg-main overflow-auto">
+  <div id="app" class="h-full w-full">
+   <!-- Header -->
+   <header class="px-6 py-4 flex items-center justify-between border-b border-black/5">
+    <div class="flex items-center gap-2">
+     <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center">
+      <i data-lucide="zap" class="w-4 h-4 text-white"></i>
+     </div><span class="font-semibold text-lg tracking-tight text-gray-900">KINERA</span>
+    </div><button id="resetBtn" class="mono text-xs px-4 py-2 rounded-full border border-gray-300 hover:border-emerald-400 hover:text-emerald-600 transition-all duration-300 text-gray-500"> RESET ENERGY </button>
+   </header><!-- Main Content -->
+   <main class="flex flex-col lg:flex-row h-[calc(100%-64px)]">
+    <!-- Left Panel -->
+    <div class="lg:w-[45%] p-8 lg:p-12 flex flex-col justify-center">
+     <div class="max-w-lg">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 mb-6">
+       <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div><span class="mono text-xs text-emerald-700">LIVE DEMO</span>
+      </div>
+      <h1 id="heading" class="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight mb-3">Interactive Energy Generation</h1>
+      <p id="subheading" class="text-gray-500 text-base mb-10">Experience how every step can generate clean electricity.</p><!-- Stats Grid -->
+      <div class="grid grid-cols-2 gap-4 mb-8">
+       <div class="bg-white/60 backdrop-blur rounded-2xl p-4 border border-white">
+        <div class="text-xs text-gray-400 mono mb-1">
+         PRESSURE
+        </div>
+        <div class="flex items-baseline gap-1">
+         <span id="stat-pressure" class="text-2xl font-bold text-gray-900 mono stat-value">0</span> <span class="text-sm text-gray-400 mono">%</span>
+        </div>
+        <div class="mt-2 h-1 bg-gray-100 rounded-full overflow-hidden">
+         <div id="bar-pressure" class="h-full bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full transition-all duration-200" style="width:0%"></div>
+        </div>
+       </div>
+       <div class="bg-white/60 backdrop-blur rounded-2xl p-4 border border-white">
+        <div class="text-xs text-gray-400 mono mb-1">
+         ENERGY
+        </div>
+        <div class="flex items-baseline gap-1">
+         <span id="stat-energy" class="text-2xl font-bold text-gray-900 mono stat-value">0.0</span> <span class="text-sm text-gray-400 mono">W</span>
+        </div>
+        <div class="mt-2 h-1 bg-gray-100 rounded-full overflow-hidden">
+         <div id="bar-energy" class="h-full bg-gradient-to-r from-amber-400 to-orange-400 rounded-full transition-all duration-200" style="width:0%"></div>
+        </div>
+       </div>
+       <div class="bg-white/60 backdrop-blur rounded-2xl p-4 border border-white">
+        <div class="text-xs text-gray-400 mono mb-1">
+         VOLTAGE
+        </div>
+        <div class="flex items-baseline gap-1">
+         <span id="stat-voltage" class="text-2xl font-bold text-gray-900 mono stat-value">0.0</span> <span class="text-sm text-gray-400 mono">V</span>
+        </div>
+        <div class="mt-2 h-1 bg-gray-100 rounded-full overflow-hidden">
+         <div id="bar-voltage" class="h-full bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full transition-all duration-200" style="width:0%"></div>
+        </div>
+       </div>
+       <div class="bg-white/60 backdrop-blur rounded-2xl p-4 border border-white">
+        <div class="text-xs text-gray-400 mono mb-1">
+         EFFICIENCY
+        </div>
+        <div class="flex items-baseline gap-1">
+         <span id="stat-efficiency" class="text-2xl font-bold text-gray-900 mono stat-value">0</span> <span class="text-sm text-gray-400 mono">%</span>
+        </div>
+        <div class="mt-2 h-1 bg-gray-100 rounded-full overflow-hidden">
+         <div id="bar-efficiency" class="h-full bg-gradient-to-r from-violet-400 to-purple-400 rounded-full transition-all duration-200" style="width:0%"></div>
+        </div>
+       </div>
+      </div>
+      <p class="text-xs text-gray-400 mono">PRESS &amp; HOLD THE TILE TO GENERATE ENERGY →</p>
+     </div>
+    </div><!-- Right Panel - 3D Tile -->
+    <div class="lg:w-[55%] relative flex items-center justify-center p-4">
+     <!-- Energy Meter -->
+     <div class="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 z-10">
+      <span class="mono text-[10px] text-gray-400">MAX</span>
+      <div class="w-3 h-48 bg-gray-200/50 rounded-full overflow-hidden relative flex flex-col-reverse">
+       <div id="energy-meter" class="w-full bg-gradient-to-t from-emerald-500 via-cyan-400 to-emerald-300 rounded-full meter-fill" style="height:0%"></div>
+      </div><span class="mono text-[10px] text-gray-400">0</span>
+     </div><!-- Particles Container -->
+     <div id="particles" class="absolute inset-0 pointer-events-none overflow-hidden z-20"></div><!-- Three.js Canvas -->
+     <canvas id="three-canvas" class="rounded-3xl"></canvas><!-- Press indicator -->
+     <div id="press-indicator" class="absolute bottom-8 left-1/2 -translate-x-1/2 opacity-0 transition-opacity duration-300 z-10">
+      <div class="flex items-center gap-2 bg-white/80 backdrop-blur px-4 py-2 rounded-full">
+       <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div><span class="mono text-xs text-emerald-700">GENERATING</span>
+      </div>
+     </div>
+    </div>
+   </main>
+  </div>
+  <script>
+        // SDK Init
+        const defaultConfig = {
+            section_heading: 'Interactive Energy Generation',
+            section_subheading: 'Experience how every step can generate clean electricity.',
+            background_color: '#F8ECE4',
+            accent_color: '#06d6a0',
+            text_color: '#1a1a1a',
+            surface_color: '#ffffff',
+            secondary_action_color: '#6b7280',
+            font_family: 'Bricolage Grotesque',
+            font_size: 16
+        };
+
+        function applyConfig(config) {
+            document.getElementById('heading').textContent = config.section_heading || defaultConfig.section_heading;
+            document.getElementById('subheading').textContent = config.section_subheading || defaultConfig.section_subheading;
+            document.body.style.backgroundColor = config.background_color || defaultConfig.background_color;
+            const font = config.font_family || defaultConfig.font_family;
+            document.getElementById('heading').style.fontFamily = `${font}, sans-serif`;
+            document.getElementById('subheading').style.fontFamily = `${font}, sans-serif`;
+        }
+
+        window.elementSdk.init({
+            defaultConfig,
+            onConfigChange: async (config) => { applyConfig(config); },
+            mapToCapabilities: (config) => ({
+                recolorables: [
+                    { get: () => config.background_color || defaultConfig.background_color, set: (v) => { config.background_color = v; window.elementSdk.setConfig({ background_color: v }); } },
+                    { get: () => config.surface_color || defaultConfig.surface_color, set: (v) => { config.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); } },
+                    { get: () => config.text_color || defaultConfig.text_color, set: (v) => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
+                    { get: () => config.accent_color || defaultConfig.accent_color, set: (v) => { config.accent_color = v; window.elementSdk.setConfig({ accent_color: v }); } },
+                    { get: () => config.secondary_action_color || defaultConfig.secondary_action_color, set: (v) => { config.secondary_action_color = v; window.elementSdk.setConfig({ secondary_action_color: v }); } }
+                ],
+                borderables: [],
+                fontEditable: { get: () => config.font_family || defaultConfig.font_family, set: (v) => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); } },
+                fontSizeable: { get: () => config.font_size || defaultConfig.font_size, set: (v) => { config.font_size = v; window.elementSdk.setConfig({ font_size: v }); } }
+            }),
+            mapToEditPanelValues: (config) => new Map([
+                ['section_heading', config.section_heading || defaultConfig.section_heading],
+                ['section_subheading', config.section_subheading || defaultConfig.section_subheading]
+            ])
+        });
+
+        // Three.js Scene
+        const canvas = document.getElementById('three-canvas');
+        const container = canvas.parentElement;
+        
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf8ece4);
+        
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        const camera = new THREE.PerspectiveCamera(45, width / height || 1, 0.1, 100);
+        camera.position.set(0, 2.5, 4);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(3, 5, 4);
+        scene.add(dirLight);
+        const pointLight = new THREE.PointLight(0x06d6a0, 0, 5);
+        pointLight.position.set(0, 1, 0);
+        scene.add(pointLight);
+
+        // Tile Group
+        const tileGroup = new THREE.Group();
+        scene.add(tileGroup);
+
+        // Base tile (cardboard/clay aesthetic)
+        const baseGeo = new THREE.BoxGeometry(2.4, 0.3, 2.4, 4, 1, 4);
+        // Round edges by modifying vertices slightly
+        const baseMat = new THREE.MeshStandardMaterial({
+            color: 0xd4a574,
+            roughness: 0.7,
+            metalness: 0.1
+        });
+        const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+        baseMesh.position.y = -0.15;
+        tileGroup.add(baseMesh);
+
+        // Top layer (glass/energy layer)
+        const topGeo = new THREE.BoxGeometry(2.2, 0.08, 2.2, 2, 1, 2);
+        const topMat = new THREE.MeshPhysicalMaterial({
+            color: 0xe8e0d8,
+            roughness: 0.1,
+            metalness: 0.2,
+            transmission: 0.3,
+            thickness: 0.1,
+            clearcoat: 1.0
+        });
+        const topMesh = new THREE.Mesh(topGeo, topMat);
+        topMesh.position.y = 0.04;
+        tileGroup.add(topMesh);
+
+        // Grid lines on tile
+        const lineMat = new THREE.LineBasicMaterial({ color: 0x06d6a0, transparent: true, opacity: 0.3 });
+        for (let i = -0.8; i <= 0.8; i += 0.4) {
+            const pts = [new THREE.Vector3(i, 0.09, -1), new THREE.Vector3(i, 0.09, 1)];
+            const geo = new THREE.BufferGeometry().setFromPoints(pts);
+            tileGroup.add(new THREE.Line(geo, lineMat));
+            const pts2 = [new THREE.Vector3(-1, 0.09, i), new THREE.Vector3(1, 0.09, i)];
+            const geo2 = new THREE.BufferGeometry().setFromPoints(pts2);
+            tileGroup.add(new THREE.Line(geo2, lineMat));
+        }
+
+        // Glow ring
+        const ringGeo = new THREE.RingGeometry(1.15, 1.2, 32);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x06d6a0, transparent: true, opacity: 0, side: THREE.DoubleSide });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.y = 0.1;
+        tileGroup.add(ring);
+
+        // State
+        let isPressed = false;
+        let pressure = 0;
+        let totalEnergy = 0;
+        let pressStartTime = 0;
+        let idleAngle = 0;
+
+        // Audio context for click sounds
+        let audioCtx = null;
+        function playPulse() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = 200 + pressure * 400;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        // Interaction
+        function startPress() {
+            isPressed = true;
+            pressStartTime = Date.now();
+            document.getElementById('press-indicator').style.opacity = '1';
+        }
+        function endPress() {
+            isPressed = false;
+            document.getElementById('press-indicator').style.opacity = '0';
+        }
+
+        canvas.addEventListener('mousedown', startPress);
+        canvas.addEventListener('mouseup', endPress);
+        canvas.addEventListener('mouseleave', endPress);
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startPress(); });
+        canvas.addEventListener('touchend', endPress);
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            totalEnergy = 0;
+            pressure = 0;
+            updateStats();
+        });
+
+        // Particles
+        function spawnParticle() {
+            const container = document.getElementById('particles');
+            const p = document.createElement('div');
+            p.className = 'energy-particle absolute rounded-full';
+            p.style.width = '6px';
+            p.style.height = '6px';
+            p.style.background = '#06d6a0';
+            p.style.boxShadow = '0 0 8px #06d6a0';
+            p.style.left = (40 + Math.random() * 60) + '%';
+            p.style.top = (40 + Math.random() * 30) + '%';
+            container.appendChild(p);
+            setTimeout(() => p.remove(), 1000);
+        }
+
+        function updateStats() {
+            const energy = (pressure / 100 * 20).toFixed(1);
+            const voltage = (pressure / 100 * 7).toFixed(1);
+            const efficiency = pressure > 0 ? Math.min(95, 60 + pressure * 0.35).toFixed(0) : '0';
+
+            document.getElementById('stat-pressure').textContent = Math.round(pressure);
+            document.getElementById('stat-energy').textContent = energy;
+            document.getElementById('stat-voltage').textContent = voltage;
+            document.getElementById('stat-efficiency').textContent = efficiency;
+
+            document.getElementById('bar-pressure').style.width = pressure + '%';
+            document.getElementById('bar-energy').style.width = (pressure / 100 * 100) + '%';
+            document.getElementById('bar-voltage').style.width = (pressure / 100 * 100) + '%';
+            document.getElementById('bar-efficiency').style.width = (pressure > 0 ? (60 + pressure * 0.35) : 0) + '%';
+
+            document.getElementById('energy-meter').style.height = pressure + '%';
+        }
+
+        // Animation loop
+        let lastParticleTime = 0;
+        function animate(time) {
+            requestAnimationFrame(animate);
+
+            // Update pressure
+            if (isPressed) {
+                const elapsed = (Date.now() - pressStartTime) / 1000;
+                pressure = Math.min(100, elapsed * 25);
+                totalEnergy += pressure * 0.001;
+
+                // Glow effects
+                pointLight.intensity = pressure / 100 * 3;
+                ringMat.opacity = pressure / 100 * 0.6;
+                lineMat.opacity = 0.3 + pressure / 100 * 0.7;
+
+                // Compress tile
+                tileGroup.scale.y = 1 - (pressure / 100 * 0.08);
+
+                // Particles
+                if (time - lastParticleTime > 100 && pressure > 20) {
+                    spawnParticle();
+                    lastParticleTime = time;
+                }
+                if (Math.random() < 0.02) playPulse();
+            } else {
+                pressure *= 0.92;
+                if (pressure < 0.5) pressure = 0;
+                pointLight.intensity *= 0.95;
+                ringMat.opacity *= 0.95;
+                tileGroup.scale.y += (1 - tileGroup.scale.y) * 0.1;
+            }
+
+            // Idle hover
+            idleAngle += 0.01;
+            tileGroup.rotation.y = Math.sin(idleAngle * 0.5) * 0.1;
+            tileGroup.position.y = Math.sin(idleAngle) * 0.05;
+
+            updateStats();
+            renderer.render(scene, camera);
+        }
+        animate(0);
+
+        // Resize
+        window.addEventListener('resize', () => {
+            const newWidth = container.clientWidth;
+            const newHeight = container.clientHeight;
+            camera.aspect = newWidth / newHeight || 1;
+            camera.updateProjectionMatrix();
+            renderer.setSize(newWidth, newHeight);
+        });
+
+        lucide.createIcons();
+    </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9fa94b8e135ca6f5',t:'MTc3ODU4NzU2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
